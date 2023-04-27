@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sk="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             xmlns:grv="clr-namespace:GestureRecognizerView.MAUI;assembly=GestureRecognizerView.MAUI"
+             x:Class="PaintView.MAUI.PaintView">
+    <Grid>
+        <sk:SKCanvasView x:Name="skCanvas" HorizontalOptions="Fill" VerticalOptions="Fill" />
+        <grv:GestureRecognizerView x:Name="grv" HorizontalOptions="Fill" VerticalOptions="Fill" />
+    </Grid>
+</ContentView>

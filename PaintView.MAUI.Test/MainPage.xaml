@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pv="clr-namespace:PaintView.MAUI;assembly=PaintView.MAUI"
+             x:Class="PaintView.MAUI.Test.MainPage" x:Name="mpage">
+
+    <Grid RowDefinitions="*,50,*">
+        <pv:PaintView Grid.Row="0" HorizontalOptions="Fill" VerticalOptions="Fill" BackgroundColor="White"
+                      ShowColorSelector="True" ShowPointerSelector="True" ShowUndoRedoButtons="True"
+                      ButtonsSize="40"
+                      BindingContext="{x:Reference mpage}" Self="{Binding PaintView}"/>
+        <HorizontalStackLayout Grid.Row="1" HorizontalOptions="Center">
+            <Button Text="Reset" Clicked="Button_Clicked"/>
+            <Button Text="Snapshot" Clicked="Button_Clicked_1"/>
+            <Button Text="Undo" Clicked="Button_Clicked_2"/>
+            <Button Text="Redo" Clicked="Button_Clicked_3"/>
+        </HorizontalStackLayout>
+        <Image x:Name="image" Grid.Row="2" VerticalOptions="Fill" HorizontalOptions="Fill" Aspect="AspectFit"/>
+    </Grid>
+</ContentPage>

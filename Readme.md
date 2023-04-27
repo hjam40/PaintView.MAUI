@@ -6,6 +6,8 @@ A View control for paint using touch controls.
 ## PaintView
 
 A multiplatform control for paint with the finders, mouse or pointers. The view has properties for use it as a clear drawing area or use his control buttons:
+
+
 ![View with control buttons](https://github.com/hjam40/PaintView.MAUI/blob/master/PaintView.MAUI.Test/Screenshots/paintview.png)
 
 ![View without control buttons](https://github.com/hjam40/PaintView.MAUI/blob/master/PaintView.MAUI.Test/Screenshots/paintview2.png)

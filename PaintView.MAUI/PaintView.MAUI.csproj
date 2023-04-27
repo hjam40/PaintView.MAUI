@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net7.0;net7.0-android;net7.0-ios;net7.0-maccatalyst</TargetFrameworks>
@@ -15,6 +15,18 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>A View control for paint using touch controls.</Title>
+		<Authors>hjam40</Authors>
+		<Description>A multiplatform control for paint with the finders, mouse or pointers. The view has properties for use it as a clear drawing area or use his control buttons:</Description>
+		<PackageProjectUrl>https://github.com/hjam40/PaintView.MAUI</PackageProjectUrl>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageReadmeFile>Readme.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/hjam40/PaintView.MAUI</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>csharp; dotnet; cross-platform; drawview; paintview; touch; plugin; maui; dotnet-maui;</PackageTags>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -23,6 +35,17 @@
 	  <Folder Include="Platforms\MacCatalyst\" />
 	  <Folder Include="Platforms\Tizen\" />
 	  <Folder Include="Platforms\Windows\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\icon.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\Readme.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 	<ItemGroup>

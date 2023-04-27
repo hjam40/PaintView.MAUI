@@ -19,73 +19,124 @@ public partial class PaintView : ContentView
     public static readonly BindableProperty ButtonsBorderColorProperty = BindableProperty.Create(nameof(ButtonsBorderColor), typeof(Color), typeof(PaintView), Colors.LightGrey, propertyChanged: ForceRefresh);
     public static readonly BindableProperty ButtonsBackgroundColorProperty = BindableProperty.Create(nameof(ButtonsBackgroundColor), typeof(Color), typeof(PaintView), Colors.White, propertyChanged: ForceRefresh);
     public static readonly BindableProperty SelectedButtonBackgroundColorProperty = BindableProperty.Create(nameof(SelectedButtonBackgroundColor), typeof(Color), typeof(PaintView), Colors.Grey, propertyChanged: ForceRefresh);
+    
+    /// <summary>
+    /// Binding property for use this control in MVVM.
+    /// </summary>
     public PaintView Self
     {
         get { return (PaintView)GetValue(SelfProperty); }
         set { SetValue(SelfProperty, value); }
     }
+    /// <summary>
+    /// Drawing area backgroud color.
+    /// </summary>
     public new Color BackgroundColor
     {
         get { return (Color)GetValue(BackgroundColorProperty); }
         set { SetValue(BackgroundColorProperty, value); }
     }
+    /// <summary>
+    /// Show/Hide color selector button.
+    /// </summary>
     public bool ShowColorSelector
     {
         get { return (bool)GetValue(ShowColorSelectorProperty); }
         set { SetValue(ShowColorSelectorProperty, value); }
     }
+    /// <summary>
+    /// Show/Hide pointer size selector button.
+    /// </summary>
     public bool ShowPointerSelector
     {
         get { return (bool)GetValue(ShowPointerSelectorProperty); }
         set { SetValue(ShowPointerSelectorProperty, value); }
     }
+    /// <summary>
+    /// Show/Hide undo and redo buttons.
+    /// </summary>
+
     public bool ShowUndoRedoButtons
     {
         get { return (bool)GetValue(ShowUndoRedoButtonsProperty); }
         set { SetValue(ShowUndoRedoButtonsProperty, value); }
     }
+    /// <summary>
+    /// Show/Hide figures draw toolbar.
+    /// </summary>
+
     public bool ShowFigureButtons
     {
         get { return (bool)GetValue(ShowFigureButtonsProperty); }
         set { SetValue(ShowFigureButtonsProperty, value); }
     }
+    /// <summary>
+    /// Sets the size for control buttons.
+    /// </summary>
     public float ButtonsSize
     {
         get { return (float)GetValue(ButtonsSizeProperty); }
         set { SetValue(ButtonsSizeProperty, value); }
     }
+    /// <summary>
+    /// Sets the border color for control buttons.
+    /// </summary>
     public Color ButtonsBorderColor
     {
         get { return (Color)GetValue(ButtonsBorderColorProperty); }
         set { SetValue(ButtonsBorderColorProperty, value); }
     }
+    /// <summary>
+    /// Sets the background color for control buttons.
+    /// </summary>
     public Color ButtonsBackgroundColor
     {
         get { return (Color)GetValue(ButtonsBackgroundColorProperty); }
         set { SetValue(ButtonsBackgroundColorProperty, value); }
     }
+    /// <summary>
+    /// Sets the background color for control buttons selected in toolbar.
+    /// </summary>
     public Color SelectedButtonBackgroundColor
     {
         get { return (Color)GetValue(SelectedButtonBackgroundColorProperty); }
         set { SetValue(SelectedButtonBackgroundColorProperty, value); }
     }
+    /// <summary>
+    /// Sets the drawing color.
+    /// </summary>
     public Color SelectedColor
     {
         get { return (Color)GetValue(SelectedColorProperty); }
         set { SetValue(SelectedColorProperty, value); }
     }
+    /// <summary>
+    /// Sets the drawing pointer size.
+    /// </summary>
     public float SelectedPointer
     {
         get { return (float)GetValue(SelectedPointerProperty); }
         set { SetValue(SelectedPointerProperty, value); }
     }
+    /// <summary>
+    /// If true, control buttons are hidden while user draws.
+    /// </summary>
     public bool HideButtonsOnDrawing
     {
         get { return (bool)GetValue(HideButtonsOnDrawingProperty); }
         set { SetValue(HideButtonsOnDrawingProperty, value); }
     }
+    /// <summary>
+    /// Minimun movement distante for start to draw.
+    /// </summary>
     public float MinDistanceBetweenDrawingPoints { get; set; } = 1f;
+    /// <summary>
+    /// Colors list to show in the palette.
+    /// </summary>
     public List<Color> Palette { get; set; } = new List<Color> { Colors.Black, Colors.White, Colors.Red, Colors.Orange, Colors.Brown, Colors.Blue, Colors.LightBlue, Colors.Cyan, Colors.DarkGreen, Colors.Green, Colors.LightGreen, Colors.YellowGreen, Colors.Yellow, Colors.DarkGray, Colors.Gray, Colors.LightGrey };
+    /// <summary>
+    /// Pointers sizes list to show in the pointer selector.
+    /// </summary>
     public List<float> Pointers { get; set; } = new List<float> { 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 18, 20 };
 
     private uint activePointerId = uint.MaxValue;
@@ -96,6 +147,7 @@ public partial class PaintView : ContentView
     private SKPaint paint;
     private readonly List<Tuple<SKPath, SKPaint>> undopaths = new();
     private readonly List<Tuple<SKPath, SKPaint>> redopaths = new();
+    private readonly List<Tuple<SKPath, SKPaint>> paintpaths = new();
     private bool forceRepaint = false;
     private bool showingPalette = false;
     private bool showingPointers = false;
@@ -109,7 +161,7 @@ public partial class PaintView : ContentView
     private int figure = -1;
     private readonly int numFigureButtons = 5;
     private Point paintingStartPoint;
-    private float dWidth = 0, dHeight = 0, scale = 0;
+    private float scale = 0;
     public PaintView()
 	{
 		InitializeComponent();
@@ -401,12 +453,17 @@ public partial class PaintView : ContentView
     /// <param name="steps">Number of steps to undo</param>
     public void UnDo(int steps = 1)
     {
-        steps = Math.Min(steps, undopaths.Count);
-        while (steps > 0)
+        while (steps > 0 && undopaths.Count > 0)
         {
             var p = undopaths.Last();
             undopaths.Remove(p);
             redopaths.Add(p);
+            if (undopaths.Count > 0 && undopaths.Last().Item2.Style == SKPaintStyle.Fill)
+            {
+                p = undopaths.Last();
+                undopaths.Remove(p);
+                redopaths.Add(p);
+            }
             steps--;
         }
         forceRepaint = true;
@@ -418,22 +475,120 @@ public partial class PaintView : ContentView
     /// <param name="steps">Number of steps to redo</param>
     public void ReDo(int steps = 1)
     {
-        steps = Math.Min(steps, redopaths.Count);
-        while (steps > 0)
+        while (steps > 0 && redopaths.Count > 0)
         {
             var p = redopaths.Last();
             redopaths.Remove(p);
             undopaths.Add(p);
+            if (redopaths.Count > 0 && p.Item2.Style == SKPaintStyle.Fill)
+            {
+                p = redopaths.Last();
+                redopaths.Remove(p);
+                undopaths.Add(p);
+            }
             steps--;
         }
         forceRepaint = true;
         skCanvas.InvalidateSurface();
     }
-
-    public void DrawLine(Point start, Point end)
+    /// <summary>
+    /// Draws a line in the indicates coordinates.
+    /// </summary>
+    /// <param name="start">Line start point</param>
+    /// <param name="end">Line end point</param>
+    /// <param name="color">Stroke color for the line</param>
+    /// <param name="pointerSize">Stroke width for the line</param>
+    /// <param name="canBeUnDo">Indicates if the user can undo this draw with the undo button</param>
+    public void DrawLine(Point start, Point end, Color color, float pointerSize, bool canBeUnDo = true)
     {
-        skCanvas.InvalidateSurface();
+        if (start.X >= 0 && start.X <= Width && end.X >= 0 && end.X <= Width && start.Y >= 0 && start.Y <= Height && end.Y >= 0 && end.Y <= Height)
+        {
+            SKPath path = new();
+            SKPaint p = new() { Style = SKPaintStyle.Stroke, Color = color.ToSKColor(), StrokeWidth = pointerSize };
+            path.MoveTo((float)start.X * scale, (float)start.Y * scale);
+            path.LineTo((float)end.X * scale, (float)end.Y * scale);
+            if (canBeUnDo)
+            {
+                undopaths.Add(new(path, p));
+                redopaths.Clear();
+            }
+            else
+                paintpaths.Add(new(path, p));
+            forceRepaint = true;
+            skCanvas.InvalidateSurface();
+        }
     }
+    /// <summary>
+    /// Draws an oval in the indicates coordinates.
+    /// </summary>
+    /// <param name="start">Oval rect start point</param>
+    /// <param name="end">Oval rect end point</param>
+    /// <param name="strokeColor">Stroke color for the oval</param>
+    /// <param name="fillColor">Stroke color for the oval</param>
+    /// <param name="pointerSize">Stroke width for the oval</param>
+    /// <param name="canBeUnDo">Indicates if the user can undo this draw with the undo button</param>
+    public void DrawOval(Point start, Point end, Color strokeColor, Color fillColor, float pointerSize, bool canBeUnDo = true)
+    {
+        if (start.X >= 0 && start.X <= Width && end.X >= 0 && end.X <= Width && start.Y >= 0 && start.Y <= Height && end.Y >= 0 && end.Y <= Height)
+        {
+            SKPath path = new();
+            SKPaint ps = new() { Style = SKPaintStyle.Stroke, Color = strokeColor.ToSKColor(), StrokeWidth = pointerSize };
+            SKPaint pf = new() { Style = SKPaintStyle.Fill, Color = fillColor.ToSKColor(), StrokeWidth = pointerSize };
+            path.AddOval(new((float)start.X * scale, (float)start.Y * scale, (float)end.X * scale, (float)end.Y * scale));
+            if (fillColor != Colors.Transparent)
+            {
+                if (canBeUnDo)
+                    undopaths.Add(new(path, pf));
+                else
+                    paintpaths.Add(new(path, pf));
+            }
+            if (canBeUnDo)
+            {
+                undopaths.Add(new(path, ps));
+                redopaths.Clear();
+            }
+            else
+                paintpaths.Add(new(path, ps));
+            forceRepaint = true;
+            skCanvas.InvalidateSurface();
+        }
+    }
+    /// <summary>
+    /// Draws a rectangle in the indicates coordinates.
+    /// </summary>
+    /// <param name="start">Rectangle start point</param>
+    /// <param name="end">Rectangle end point</param>
+    /// <param name="strokeColor">Stroke color for the rectangle</param>
+    /// <param name="fillColor">Stroke color for the rectangle</param>
+    /// <param name="pointerSize">Stroke width for the rectangle</param>
+    /// <param name="canBeUnDo">Indicates if the user can undo this draw with the undo button</param>
+    public void DrawRect(Point start, Point end, Color strokeColor, Color fillColor, float pointerSize, bool canBeUnDo = true)
+    {
+        if (start.X >= 0 && start.X <= Width && end.X >= 0 && end.X <= Width && start.Y >= 0 && start.Y <= Height && end.Y >= 0 && end.Y <= Height)
+        {
+            SKPath path = new();
+            SKPaint ps = new() { Style = SKPaintStyle.Stroke, Color = strokeColor.ToSKColor(), StrokeWidth = pointerSize };
+            SKPaint pf = new() { Style = SKPaintStyle.Fill, Color = fillColor.ToSKColor(), StrokeWidth = pointerSize };
+            path.AddRect(new((float)start.X * scale, (float)start.Y * scale, (float)end.X * scale, (float)end.Y * scale));
+            if (fillColor != Colors.Transparent)
+            {
+                if (canBeUnDo)
+                    undopaths.Add(new(path, pf));
+                else
+                    paintpaths.Add(new(path, pf));
+            }
+            if (canBeUnDo)
+            {
+                undopaths.Add(new(path, ps));
+                redopaths.Clear();
+            }
+            else
+                paintpaths.Add(new(path, ps));
+            forceRepaint = true;
+            skCanvas.InvalidateSurface();
+        }
+    }
+
     private static void ForceRefresh(BindableObject bindable, object oldValue, object newValue)
     {
         if (oldValue != newValue && bindable is PaintView pv)
@@ -544,15 +699,20 @@ public partial class PaintView : ContentView
     /// <summary>
     /// Initialize the Paint view.
     /// </summary>
-    public void Reset()
+    /// <param name="clearNoUnDoDraws">If true, figures drawn by drawing methods will not be eraser</param>
+    public void Reset(bool clearNoUnDoDraws = true)
     {
         undopaths.Clear();
         redopaths.Clear();
+        if (clearNoUnDoDraws) paintpaths.Clear();
         forceRepaint = true;
         showingPalette = false;
         showingPointers = false;
         drawing = false;
         capturing = false;
+        painting = false;
+        paintingSelected = false;
+        figure = -1;
         skCanvas.InvalidateSurface();
     }
     /// <summary>
@@ -589,19 +749,15 @@ public partial class PaintView : ContentView
     private void SkCanvas_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
-        dWidth = canvas.LocalClipBounds.Width;
-        dHeight = canvas.LocalClipBounds.Height;
-        scale = dWidth / Math.Max(1f, (float)Width);
+        scale = canvas.LocalClipBounds.Width / Math.Max(1f, (float)Width);
 
         if (forceRepaint || capturing)
         {
             canvas.Clear(BackgroundColor.ToSKColor());
-            int i = 0;
-            foreach (var path in undopaths)
-            {
+            foreach (var path in paintpaths)
                 canvas.DrawPath(path.Item1, path.Item2);
-                i++;
-            }
+            foreach (var path in undopaths)
+                canvas.DrawPath(path.Item1, path.Item2);
             forceRepaint = false;
         }
         if (currentPath != null)

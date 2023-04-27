@@ -14,6 +14,7 @@
             <Button Text="Snapshot" Clicked="Button_Clicked_1"/>
             <Button Text="Undo" Clicked="Button_Clicked_2"/>
             <Button Text="Redo" Clicked="Button_Clicked_3"/>
+            <Button Text="Draw" Clicked="Button_Clicked_4"/>
         </HorizontalStackLayout>
         <Image x:Name="image" Grid.Row="2" VerticalOptions="Fill" HorizontalOptions="Fill" Aspect="AspectFit"/>
     </Grid>

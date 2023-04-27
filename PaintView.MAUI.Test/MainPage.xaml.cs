@@ -27,4 +27,10 @@ public partial class MainPage : ContentPage
     {
         PaintView.ReDo();
     }
+    private void Button_Clicked_4(object sender, EventArgs e)
+    {
+        PaintView.DrawRect(new(200, 100), new(300, 200), Colors.Black, Colors.Cyan, 2);
+        PaintView.DrawOval(new(200, 100), new(300, 200), Colors.Black, Colors.Cyan, 2, false);
+        PaintView.DrawLine(new(200, 100), new(300, 200), Colors.Black, 2);
+    }
 }

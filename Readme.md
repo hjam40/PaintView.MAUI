@@ -16,7 +16,7 @@ Properties:
 
  ```csharp
 /// Binding property for use this control in MVVM.
-public GestureRecognizerView Self
+public PaintView Self
 /// Drawing area backgroud color
 public new Color BackgroundColor
 /// Show/Hide color selector button.

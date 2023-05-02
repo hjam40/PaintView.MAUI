@@ -138,6 +138,14 @@ public partial class PaintView : ContentView
     /// Pointers sizes list to show in the pointer selector.
     /// </summary>
     public List<float> Pointers { get; set; } = new List<float> { 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 18, 20 };
+    private Rect bounds = Rect.Zero;
+    /// <summary>
+    /// Sets the rectangle area where user can draw.
+    /// </summary>
+    public Rect DrawBounds { 
+        get => bounds;
+        set => bounds = value;
+    }
 
     private uint activePointerId = uint.MaxValue;
     private bool drawing = false;
@@ -162,6 +170,7 @@ public partial class PaintView : ContentView
     private readonly int numFigureButtons = 5;
     private Point paintingStartPoint;
     private float scale = 0;
+    private bool onlyBounds = false;
     public PaintView()
 	{
 		InitializeComponent();
@@ -174,7 +183,6 @@ public partial class PaintView : ContentView
     }
     private void PaintView_SizeChanged(object sender, EventArgs e)
     {
-        if ((Width > 0 || Height > 0) && Self == null) Self = this;
         forceRepaint = true;
         skCanvas.InvalidateSurface();
     }
@@ -305,7 +313,8 @@ public partial class PaintView : ContentView
                         !(ShowPointerSelector && args.X >= (ShowColorSelector ? ButtonsSize : 0) && args.X <= (ShowColorSelector ? ButtonsSize * 2 : ButtonsSize) && args.Y <= ButtonsSize) &&
                         !(ShowUndoRedoButtons && args.X >= ((float)Width - undoPath.Bounds.Width / scale * 4.5) && args.Y <= undoPath.Bounds.Height / scale * 6.5) &&
                         !(showingPointers && args.X >= (ShowColorSelector ? ButtonsSize : 0) && args.X <= (ShowColorSelector ? ButtonsSize * 2 : ButtonsSize)) &&
-                        !(showingPalette && args.X <= ButtonsSize))
+                        !(showingPalette && args.X <= ButtonsSize) &&
+                        (bounds == Rect.Zero || (args.X >= bounds.X * scale && args.X <= (bounds.X + bounds.Width) * scale && args.Y >= bounds.Y * scale && args.Y <= (bounds.Y + bounds.Height) * scale)))
                     {
                         currentPath = new();
                         drawingPoints = 0;
@@ -327,10 +336,24 @@ public partial class PaintView : ContentView
                 {
                     if (lastPoint.Distance(args.Pointer.EndPoint) >= MinDistanceBetweenDrawingPoints)
                     {
-                        lastPoint = new Point(args.Pointer.EndPoint.X * scale, args.Pointer.EndPoint.Y * scale);
-                        currentPath.LineTo((float)lastPoint.X, (float)lastPoint.Y);
-                        forceRepaint = HideButtonsOnDrawing && drawingPoints == 0;
-                        drawingPoints++;
+                        if (bounds == Rect.Zero || (args.X >= bounds.X * scale && args.X <= (bounds.X + bounds.Width) * scale && args.Y >= bounds.Y * scale && args.Y <= (bounds.Y + bounds.Height) * scale))
+                        {
+                            lastPoint = new Point(args.Pointer.EndPoint.X * scale, args.Pointer.EndPoint.Y * scale);
+                            currentPath.LineTo((float)lastPoint.X, (float)lastPoint.Y);
+                            forceRepaint = HideButtonsOnDrawing && drawingPoints == 0;
+                            drawingPoints++;
+                        }
+                        else
+                        {
+                            if (drawingPoints > 0)
+                            {
+                                undopaths.Add(new(currentPath, paint));
+                                redopaths.Clear();
+                                currentPath = new();
+                            }
+                            drawing = false;
+                            activePointerId = uint.MaxValue;
+                        }
                         skCanvas.InvalidateSurface();
                     }
                 }
@@ -338,31 +361,45 @@ public partial class PaintView : ContentView
                 {
                     if (lastPoint.Distance(args.Pointer.EndPoint) >= MinDistanceBetweenDrawingPoints)
                     {
-                        lastPoint = new Point(args.Pointer.EndPoint.X * scale, args.Pointer.EndPoint.Y * scale);
-                        currentPath = new();
-                        var xdis = (float)(lastPoint.X - paintingStartPoint.X);
-                        var ydis = (float)(lastPoint.Y - paintingStartPoint.Y);
-                        switch (figure)
+                        if (bounds == Rect.Zero || (args.X >= bounds.X * scale && args.X <= (bounds.X + bounds.Width) * scale && args.Y >= bounds.Y * scale && args.Y <= (bounds.Y + bounds.Height) * scale))
                         {
-                            case 0:
-                                currentPath.MoveTo((float)paintingStartPoint.X, (float)paintingStartPoint.Y);
-                                currentPath.LineTo((float)lastPoint.X, (float)lastPoint.Y);
-                                break;
-                            case 1:
-                                currentPath.AddRect(new((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)paintingStartPoint.X + Math.Min(xdis, ydis), (float)paintingStartPoint.Y + Math.Min(xdis, ydis)));
-                                break;
-                            case 2:
-                                currentPath.AddCircle((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)paintingStartPoint.Distance(lastPoint));
-                                break;
-                            case 3:
-                                currentPath.AddRect(new((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)lastPoint.X, (float)lastPoint.Y));
-                                break;
-                            case 4:
-                                currentPath.AddOval(new((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)lastPoint.X, (float)lastPoint.Y));
-                                break;
+                            lastPoint = new Point(args.Pointer.EndPoint.X * scale, args.Pointer.EndPoint.Y * scale);
+                            currentPath = new();
+                            var xdis = (float)(lastPoint.X - paintingStartPoint.X);
+                            var ydis = (float)(lastPoint.Y - paintingStartPoint.Y);
+                            switch (figure)
+                            {
+                                case 0:
+                                    currentPath.MoveTo((float)paintingStartPoint.X, (float)paintingStartPoint.Y);
+                                    currentPath.LineTo((float)lastPoint.X, (float)lastPoint.Y);
+                                    break;
+                                case 1:
+                                    currentPath.AddRect(new((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)paintingStartPoint.X + Math.Min(xdis, ydis), (float)paintingStartPoint.Y + Math.Min(xdis, ydis)));
+                                    break;
+                                case 2:
+                                    currentPath.AddCircle((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)paintingStartPoint.Distance(lastPoint));
+                                    break;
+                                case 3:
+                                    currentPath.AddRect(new((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)lastPoint.X, (float)lastPoint.Y));
+                                    break;
+                                case 4:
+                                    currentPath.AddOval(new((float)paintingStartPoint.X, (float)paintingStartPoint.Y, (float)lastPoint.X, (float)lastPoint.Y));
+                                    break;
+                            }
+                            forceRepaint = true;
+                            drawingPoints++;
                         }
-                        forceRepaint = true;
-                        drawingPoints++;
+                        else
+                        {
+                            if (drawingPoints > 0)
+                            {
+                                undopaths.Add(new(currentPath, paint));
+                                redopaths.Clear();
+                                currentPath = new();
+                            }
+                            painting = false;
+                            activePointerId = uint.MaxValue;
+                        }
                         skCanvas.InvalidateSurface();
                     }
                 }
@@ -588,7 +625,44 @@ public partial class PaintView : ContentView
             skCanvas.InvalidateSurface();
         }
     }
+    /// <summary>
+    /// Draws a text in the indicates coordinates.
+    /// </summary>
+    /// <param name="start">Rectangle start point</param>
+    /// <param name="strokeColor">Stroke color for the text</param>
+    /// <param name="fillColor">Stroke color for the text</param>
+    /// <param name="pointerSize">Stroke width for the text</param>
+    /// <param name="fontSize">Font size for the text</param>
+    /// <param name="scaleX">Scale X for the text</param>
+    /// <param name="canBeUnDo">Indicates if the user can undo this draw with the undo button</param>
+    public void DrawText(Point start, string text, Color strokeColor, Color fillColor, float pointerSize, float fontSize, float scaleX = 1, bool canBeUnDo = true)
+    {
+        if (start.X >= 0 && start.X <= Width && start.Y >= 0 && start.Y <= Height)
+        {
+            var font = new SKFont(SKTypeface.Default, fontSize * scale, scaleX);
+            SKPaint ps = new() { Style = SKPaintStyle.Stroke, Color = strokeColor.ToSKColor(), StrokeWidth = pointerSize };
+            SKPaint pf = new() { Style = SKPaintStyle.Fill, Color = fillColor.ToSKColor(), StrokeWidth = pointerSize };
+            SKPaint skPaint = new(font);
+            var path = skPaint.GetTextPath(text, (float)start.X * scale, (float)start.Y * scale);
 
+            if (fillColor != Colors.Transparent)
+            {
+                if (canBeUnDo)
+                    undopaths.Add(new(path, pf));
+                else
+                    paintpaths.Add(new(path, pf));
+            }
+            if (canBeUnDo)
+            {
+                undopaths.Add(new(path, ps));
+                redopaths.Clear();
+            }
+            else
+                paintpaths.Add(new(path, ps));
+            forceRepaint = true;
+            skCanvas.InvalidateSurface();
+        }
+    }
     private static void ForceRefresh(BindableObject bindable, object oldValue, object newValue)
     {
         if (oldValue != newValue && bindable is PaintView pv)
@@ -718,13 +792,15 @@ public partial class PaintView : ContentView
     /// <summary>
     /// Gets a bytes[] representation from drawing area snapshot.
     /// </summary>
+    /// <param name="onlyDrawBounds">Limit the snapshot to DrawBounds area</param>
     /// <param name="format">Image format</param>
     /// <param name="quality">Image quality</param>
     /// <returns>Snapshot image bytes</returns>
-    public async Task<byte[]> GetSnapshotBytesAsync(SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
+    public async Task<byte[]> GetSnapshotBytesAsync(bool onlyDrawBounds = true, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
     {
         capturing = true;
         imageData = null;
+        onlyBounds = onlyDrawBounds;
         skCanvas.InvalidateSurface();
         while (imageData == null)
             await Task.Delay(TimeSpan.FromMilliseconds(10));
@@ -734,12 +810,13 @@ public partial class PaintView : ContentView
     /// <summary>
     /// Gets an image representation from drawing area snapshot.
     /// </summary>
+    /// <param name="onlyDrawBounds">Limit the snapshot to DrawBounds area</param>
     /// <param name="format">Image format</param>
     /// <param name="quality">Image quality</param>
     /// <returns>Snapshot image</returns>
-    public async Task<ImageSource> GetSnapshotAsync(SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
+    public async Task<ImageSource> GetSnapshotAsync(bool onlyDrawBounds = true, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
     {
-        var data = await GetSnapshotBytesAsync(format, quality);
+        var data = await GetSnapshotBytesAsync(onlyDrawBounds, format, quality);
         MemoryStream ms = new();
         ms.Write(data);
         ms.Position = 0;
@@ -749,7 +826,9 @@ public partial class PaintView : ContentView
     private void SkCanvas_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
-        scale = canvas.LocalClipBounds.Width / Math.Max(1f, (float)Width);
+        if (scale == 0)
+            scale = canvas.LocalClipBounds.Width / Math.Max(1f, (float)Width);
+        Self ??= this;
 
         if (forceRepaint || capturing)
         {
@@ -764,7 +843,10 @@ public partial class PaintView : ContentView
             canvas.DrawPath(currentPath, paint);
         if (capturing)
         {
-            imageData = e.Surface.Snapshot();
+            if (onlyBounds)
+                imageData = e.Surface.Snapshot(new SKRectI((int)(bounds.X*scale), (int)(bounds.Y*scale), (int)((bounds.X+bounds.Width)*scale), (int)((bounds.Y + bounds.Height) * scale)));
+            else
+                imageData = e.Surface.Snapshot();
         }
         if (!HideButtonsOnDrawing || (!drawing && !painting))
         {

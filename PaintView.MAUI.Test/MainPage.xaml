@@ -4,7 +4,7 @@
              xmlns:pv="clr-namespace:PaintView.MAUI;assembly=PaintView.MAUI"
              x:Class="PaintView.MAUI.Test.MainPage" x:Name="mpage">
 
-    <Grid RowDefinitions="*,50,*">
+    <Grid RowDefinitions="*,50,50,*">
         <pv:PaintView Grid.Row="0" HorizontalOptions="Fill" VerticalOptions="Fill" BackgroundColor="White"
                       ShowColorSelector="True" ShowPointerSelector="True" ShowUndoRedoButtons="True"
                       ButtonsSize="40"
@@ -16,6 +16,10 @@
             <Button Text="Redo" Clicked="Button_Clicked_3"/>
             <Button Text="Draw" Clicked="Button_Clicked_4"/>
         </HorizontalStackLayout>
-        <Image x:Name="image" Grid.Row="2" VerticalOptions="Fill" HorizontalOptions="Fill" Aspect="AspectFit"/>
+        <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center">
+            <Entry x:Name="eText" WidthRequest="150" />
+            <Button Text="Draw Text" Clicked="Button_Clicked_5"/>
+        </HorizontalStackLayout>
+        <Image x:Name="image" Grid.Row="3" VerticalOptions="Fill" HorizontalOptions="Fill" Aspect="AspectFit"/>
     </Grid>
 </ContentPage>

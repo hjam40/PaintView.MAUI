@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net7.0;net7.0-android;net7.0-ios;net7.0-maccatalyst</TargetFrameworks>
@@ -27,6 +27,8 @@
 		<PackageTags>csharp; dotnet; cross-platform; drawview; paintview; touch; plugin; maui; dotnet-maui;</PackageTags>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<Version>1.1.0</Version>
+		<PackageReleaseNotes>DrawBounds and DrawText added</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>

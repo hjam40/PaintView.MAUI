@@ -16,7 +16,7 @@ Properties:
 
  ```csharp
 /// Binding property for use this control in MVVM.
-public GestureRecognizerView Self
+public PaintView Self
 /// Drawing area backgroud color
 public new Color BackgroundColor
 /// Show/Hide color selector button.
@@ -47,16 +47,18 @@ public float MinDistanceBetweenDrawingPoints
 public List<Color> Palette
 /// Pointers sizes list to show in the pointer selector.
 public List<float> Pointers
+/// Sets the rectangle area where user can draw.
+public Rect DrawBounds
  ```
 
-Events:
+Methods:
  ```csharp
  /// Initialize the Paint view.
  public void Reset(bool clearNoUnDoDraws = true)
  /// Gets a bytes[] representation from drawing area snapshot.
- public async Task<byte[]> GetSnapshotBytesAsync(SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
+ public async Task<byte[]> GetSnapshotBytesAsync(bool onlyDrawBounds = true, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
  /// Gets an image representation from drawing area snapshot.
- public async Task<ImageSource> GetSnapshotAsync(SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
+ public async Task<ImageSource> GetSnapshotAsync(bool onlyDrawBounds = true, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
  /// Undo the drawing steps indicated.
  public void UnDo(int steps = 1);
  /// Redo the drawing steps indicated.
@@ -67,6 +69,8 @@ Events:
  public void DrawOval(Point start, Point end, Color strokeColor, Color fillColor, float pointerSize, bool canBeUnDo = true)
  /// Draws a rectangle in the indicates coordinates.
 public void DrawRect(Point start, Point end, Color strokeColor, Color fillColor, float pointerSize, bool canBeUnDo = true)
+/// Draws a text in the indicates coordinates.
+public void DrawText(Point start, string text, Color strokeColor, Color fillColor, float pointerSize, float fontSize, float scaleX = 1, bool canBeUnDo = true)
  ```
 
 ### Install and configure PaintView
